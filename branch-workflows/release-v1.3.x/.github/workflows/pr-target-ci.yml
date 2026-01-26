@@ -1,0 +1,110 @@
+# v1.3.x Branch Workflow
+# This workflow is INTENTIONALLY DIFFERENT from main
+# It represents the CI configuration frozen at v1.3.x release time
+#
+# KEY DIFFERENCES FROM MAIN:
+# - Uses Node.js 18 (main uses 20)
+# - Uses specific security rules for v1.3
+# - Has v1.3 specific environment variables
+# - Different test coverage thresholds
+
+name: PR Target CI (v1.3.x)
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+env:
+  # v1.3.x specific environment variables
+  MIN_COVERAGE: 75
+  REGISTRY_PATH: myorg/app/v1.3
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Security scan (v1.3 rules)
+        run: |
+          echo "=== v1.3.x Security Scanning ==="
+          echo "Using v1.3.x security rules and CVE database"
+          echo "Threshold: CRITICAL and HIGH only (v1.3 policy)"
+          echo ""
+          echo "Scanning for vulnerabilities..."
+          sleep 1
+          echo "Security scan passed (v1.3.x rules)"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node.js (v1.3.x uses Node 18)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Run ESLint (v1.3 config)
+        run: |
+          echo "Running ESLint with v1.3.x configuration..."
+          echo "Using .eslintrc.v1.3.json rules"
+          sleep 1
+          echo "Lint passed"
+
+  build-and-test:
+    needs: [security-scan, lint]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node.js (v1.3.x uses Node 18)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'  # v1.3.x sticks with Node 18
+
+      - name: v1.3.x specific configuration
+        run: |
+          echo "=== v1.3.x Branch CI ==="
+          echo "This workflow is SPECIFIC to the v1.3.x branch"
+          echo ""
+          echo "Configuration frozen at v1.3.x release:"
+          echo "- Node.js: 18"
+          echo "- Test framework: Jest 29"
+          echo "- Minimum coverage: ${{ env.MIN_COVERAGE }}%"
+          echo "- Registry path: ${{ env.REGISTRY_PATH }}"
+          echo "- ESLint: v1.3 ruleset"
+          echo ""
+          echo "This workflow SHOULD run when PRs target release/v1.3.x"
+          echo "But due to pull_request_target changes, the workflow from main runs instead"
+
+      - name: Build container (v1.3 style)
+        run: |
+          echo "Building with v1.3.x Dockerfile..."
+          echo "Using multi-stage build (v1.3 optimization)..."
+          # Would use: docker build -f Dockerfile.v1.3 .
+
+      - name: Run tests with coverage
+        run: |
+          echo "Running Jest 29 test suite with coverage..."
+          echo "Minimum coverage threshold: ${{ env.MIN_COVERAGE }}%"
+          sleep 2
+          echo "Coverage: 82% (above ${{ env.MIN_COVERAGE }}% threshold)"
+          echo "Tests passed (v1.3.x style)"
+
+      - name: Push to registry
+        run: |
+          echo "Pushing to registry: ${{ env.REGISTRY_PATH }}"
+          echo "Image: ${{ env.REGISTRY_PATH }}:pr-${{ github.event.pull_request.number }}"

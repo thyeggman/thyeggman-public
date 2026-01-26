@@ -1,0 +1,46 @@
+# Regular pull_request workflow - runs on push and PRs from internal branches
+# This workflow CANNOT be used for external contributor PRs because:
+# 1. It doesn't have access to secrets
+# 2. Can't push container images to the registry
+#
+# This is why we need pull_request_target for the main CI
+
+name: Basic PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  basic-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Explain limitation
+        run: |
+          echo "=== Basic PR Checks ==="
+          echo ""
+          echo "This workflow runs with pull_request trigger."
+          echo "It has LIMITED permissions and NO access to secrets."
+          echo ""
+          echo "For external contributors (PRs from forks), this means:"
+          echo "- Cannot build container images with registry credentials"
+          echo "- Cannot push to container registry"
+          echo "- Cannot access any repository secrets"
+          echo ""
+          echo "This is why we need pull_request_target for the main CI workflow."
+
+      - name: Run basic lint
+        run: |
+          echo "Running basic lint checks (no secrets needed)..."
+          # This could run actual linting
+          echo "Lint passed 456"
+
+      - name: Show event info
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Base: ${{ github.base_ref }}"
+          echo "Head: ${{ github.head_ref }}"

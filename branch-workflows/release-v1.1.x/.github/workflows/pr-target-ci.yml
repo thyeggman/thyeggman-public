@@ -1,0 +1,63 @@
+# v1.1.x Branch Workflow
+# This workflow is INTENTIONALLY DIFFERENT from main
+# It represents the CI configuration frozen at v1.1.x release time
+#
+# KEY DIFFERENCES FROM MAIN:
+# - Uses older Node.js version (16)
+# - Uses legacy test framework
+# - Has different permissions model
+# - Fewer security checks (added in v1.2)
+
+name: PR Target CI (v1.1.x)
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node.js (v1.1.x uses Node 16)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'  # Frozen at Node 16 for v1.1.x compatibility
+
+      - name: v1.1.x specific configuration
+        run: |
+          echo "=== v1.1.x Branch CI ==="
+          echo "This workflow is SPECIFIC to the v1.1.x branch"
+          echo ""
+          echo "Configuration frozen at v1.1.x release:"
+          echo "- Node.js: 16 (LTS at v1.1 release time)"
+          echo "- Test framework: Jest 27 (legacy)"
+          echo "- No security scanning (added in v1.2)"
+          echo ""
+          echo "This workflow SHOULD run when PRs target release/v1.1.x"
+          echo "But due to pull_request_target changes, the workflow from main runs instead"
+
+      - name: Build container (v1.1 style)
+        run: |
+          echo "Building with v1.1.x Dockerfile..."
+          echo "Using legacy build arguments..."
+          # Would use: docker build -f Dockerfile.v1.1 .
+
+      - name: Run legacy tests
+        run: |
+          echo "Running Jest 27 test suite..."
+          echo "Using v1.1.x test configuration..."
+          sleep 2
+          echo "Tests passed (v1.1.x style)"
+
+      - name: Push to registry
+        run: |
+          echo "Pushing to registry with v1.1.x naming convention..."
+          echo "Image: myorg/app:v1.1.x-pr-${{ github.event.pull_request.number }}"

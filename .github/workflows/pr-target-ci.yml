@@ -1,0 +1,188 @@
+# This workflow runs on pull_request_target events
+# Due to the recent breaking change, this workflow now runs from the DEFAULT branch
+# instead of the BASE branch of the PR.
+#
+# WORKAROUND: We maintain copies of stable branch workflows here on main
+# to handle PRs targeting those branches. This is problematic because:
+# 1. We can't properly test workflow changes for stable branches
+# 2. Changes must be merged to main before they take effect on stable branches
+# 3. Main and stable branches intentionally diverge in workflow behavior
+
+name: PR Target CI
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  determine-context:
+    runs-on: ubuntu-latest
+    outputs:
+      target_branch: ${{ steps.branch.outputs.target }}
+      workflow_version: ${{ steps.branch.outputs.workflow_version }}
+    steps:
+      - name: Determine target branch
+        id: branch
+        run: |
+          echo "target=${{ github.base_ref }}" >> $GITHUB_OUTPUT
+          echo "TEST"
+          # This is the workaround - we have to determine which "version" of the 
+          # workflow logic to use based on the target branch
+          case "${{ github.base_ref }}" in
+            release/v1.1.x)
+              echo "workflow_version=v1.1" >> $GITHUB_OUTPUT
+              ;;
+            release/v1.2.x)
+              echo "workflow_version=v1.2" >> $GITHUB_OUTPUT
+              ;;
+            release/v1.3.x)
+              echo "workflow_version=v1.3" >> $GITHUB_OUTPUT
+              ;;
+            main)
+              echo "workflow_version=main" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "workflow_version=unknown" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  # Build job that requires secrets (reason for using pull_request_target)
+  build-and-push:
+    needs: determine-context
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          # SECURITY: We checkout the PR head to build the contributor's code
+          # This is the whole reason we need pull_request_target - to access secrets
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Display context information
+        run: |
+          echo "=== PR Target CI Context ==="
+          echo "PR Number: ${{ github.event.pull_request.number }}"
+          echo "Target Branch: ${{ needs.determine-context.outputs.target_branch }}"
+          echo "Workflow Version: ${{ needs.determine-context.outputs.workflow_version }}"
+          echo "PR Head SHA: ${{ github.event.pull_request.head.sha }}"
+          echo "Running from: ${{ github.ref }}"
+          echo ""
+          echo "NOTE: Due to the pull_request_target change, this workflow is running"
+          echo "from the DEFAULT branch (main), not the BASE branch of the PR."
+          echo ""
+          echo "This means if this PR targets release/v1.2.x, the workflow from main"
+          echo "is running, not the workflow that exists on release/v1.2.x AAA"
+
+      # Simulated container build that requires secrets
+      - name: Build container image
+        run: |
+          echo "Building container image..."
+          echo "Using workflow version: ${{ needs.determine-context.outputs.workflow_version }}"
+          # In real scenario, this would use docker build
+          echo "BUILD_TAG=test-image:pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+
+      # Simulated push to registry (requires GITHUB_TOKEN with packages:write)
+      - name: Push to registry (simulated)
+        run: |
+          echo "Pushing to registry (simulated)..."
+          echo "Would use secret: REGISTRY_TOKEN (not actually using it)"
+          echo "Image: ${{ env.BUILD_TAG }}"
+          # In real scenario: docker push ${{ env.BUILD_TAG }}
+
+  #############################################################################
+  # WORKAROUND SECTION
+  # The following jobs contain branch-specific logic that SHOULD be defined
+  # in the respective stable branches, but due to the pull_request_target
+  # change, we're forced to maintain copies here on main.
+  #############################################################################
+
+  # v1.1.x specific CI steps (WORKAROUND COPY)
+  ci-v1-1:
+    needs: [determine-context, build-and-push]
+    if: needs.determine-context.outputs.workflow_version == 'v1.1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: v1.1.x specific tests
+        run: |
+          echo "=== Running v1.1.x specific CI ==="
+          echo "This job contains logic that SHOULD be on release/v1.1.x branch"
+          echo "but is maintained here on main as a workaround."
+          echo ""
+          echo "v1.1.x uses older test framework configuration"
+          echo "Running legacy compatibility tests..."
+          # Simulated v1.1-specific tests
+          sleep 2
+          echo "v1.1.x CI complete"
+
+  # v1.2.x specific CI steps (WORKAROUND COPY)
+  ci-v1-2:
+    needs: [determine-context, build-and-push]
+    if: needs.determine-context.outputs.workflow_version == 'v1.2'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: v1.2.x specific tests
+        run: |
+          echo "=== Running v1.2.x specific CI ==="
+          echo "This job contains logic that SHOULD be on release/v1.2.x branch"
+          echo "but is maintained here on main as a workaround."
+          echo ""
+          echo "v1.2.x introduced new security scanning"
+          echo "Running security scan with v1.2 configuration..."
+          # Simulated v1.2-specific tests
+          sleep 2
+          echo "v1.2.x CI complete"
+
+  # v1.3.x specific CI steps (WORKAROUND COPY)
+  ci-v1-3:
+    needs: [determine-context, build-and-push]
+    if: needs.determine-context.outputs.workflow_version == 'v1.3'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: v1.3.x specific tests
+        run: |
+          echo "=== Running v1.3.x specific CI ==="
+          echo "This job contains logic that SHOULD be on release/v1.3.x branch"
+          echo "but is maintained here on main as a workaround."
+          echo ""
+          echo "v1.3.x uses updated Node.js version and new lint rules"
+          echo "Running tests with v1.3 configuration..."
+          # Simulated v1.3-specific tests
+          sleep 2
+          echo "v1.3.x CI complete"
+
+  # Main branch CI steps
+  ci-main:
+    needs: [determine-context, build-and-push]
+    if: needs.determine-context.outputs.workflow_version == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Main branch tests
+        run: |
+          echo "=== Running main branch CI ==="
+          echo "This is the bleeding edge CI configuration"
+          echo "Running full test suite..."
+          sleep 2
+          echo "Main CI complete"
