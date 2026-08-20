@@ -1,0 +1,96 @@
+name: Test workflow dispatch inputs
+
+on:
+  workflow_dispatch:
+    inputs:
+      string_input: {}
+      boolean_input:
+        description: A boolean input
+        type: boolean
+        default: true
+      choice_input:
+        description: A choice input
+        type: choice
+        required: true
+        options:
+          - alpha
+          - beta
+          - gamma
+        default: alpha
+      number_input:
+        description: A number input
+        type: number
+        default: 42
+      environment_input:
+        description: An environment input
+        type: environment
+
+      string_input_02:
+        description: String input 2
+        type: string
+      string_input_03:
+        description: String input 3
+        type: string
+      string_input_04:
+        description: String input 4
+        type: string
+      string_input_05:
+        description: String input 5
+        type: string
+      string_input_06:
+        description: String input 6
+        type: string
+      string_input_07:
+        description: String input 7
+        type: string
+      string_input_08:
+        description: String input 8
+        type: string
+      string_input_09:
+        description: String input 9
+        type: string
+      string_input_10:
+        description: String input 10
+        type: string
+      string_input_11:
+        description: String input 11
+        type: string
+      string_input_12:
+        description: String input 12
+        type: string
+      string_input_13:
+        description: String input 13
+        type: string
+      string_input_14:
+        description: String input 14
+        type: string
+      string_input_15:
+        description: String input 15
+        type: string
+      string_input_16:
+        description: String input 16
+        type: string
+      string_input_17:
+        description: String input 17
+        type: string
+      string_input_18:
+        description: String input 18
+        type: string
+      string_input_19:
+        description: String input 19
+        type: string
+      string_input_20:
+        description: String input 20
+        type: string
+      string_input_21:
+        description: String input 21
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print inputs
+        env:
+          INPUTS_JSON: ${{ toJSON(inputs) }}
+        run: printf '%s\n' "$INPUTS_JSON" | jq .
